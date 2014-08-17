@@ -19,7 +19,7 @@ class Activity
      * Activity::__construct()
      * @access public
      */
-    public function __construct($handle)
+    public function __construct($handle = false)
     {
         $this->handle = $handle;
         $this->db = new DB();
@@ -60,29 +60,30 @@ class Activity
             'raw' => $this->_raw
         ];
 
+        // Create activity
         if ($activity_id = $this->db->val("SELECT id FROM activities WHERE handle = '%s'", $this->handle)) {
             $this->db->update("UPDATE activities SET %s WHERE handle = '%s'", $data, $this->handle);
 
         } else {
-
             $data['created_at'] = 'CURRENT_TIMESTAMP';
             $activity_id = $this->db->insert('activities', $data);
-
-            $this->db->insert('activities_names', [
-                'activity_id' => $activity_id,
-                'name' => $this->name
-            ]);
         }
 
-        foreach ($this->attachments as $uri) {
-            if ($this->db->val("SELECT id FROM attachments WHERE original_url = '%s' AND activity_id = %s", $uri, $activity_id)) {
+        // Save attachments
+        foreach ($this->attachments as $att) {
+            if ($att_id = $this->db->val("SELECT id FROM attachments WHERE original_url = '%s' AND activity_id = %s", $att['original_url'], $activity_id)) {
+                $this->db->update("UPDATE attachments SET %s WHERE id = %s", $att, $att_id);
                 continue;
             }
 
-            $this->db->insert('attachments', [
-                'original_url' => $uri,
-                'activity_id' => $activity_id
-            ]);
+            $att['activity_id'] = $activity_id;
+            $this->db->insert('attachments', $att);
+        }
+
+        if ($name_id = $this->db->val("SELECT id FROM activities_names WHERE activity_id = %s", $activity_id)) {
+            $this->db->update("UPDATE activities_names SET %s WHERE id = %s", ['name' => $this->name], $name_id);
+        } else {
+            $this->db->insert('activities_names', ['name' => $this->name, 'activity_id' => $activity_id]);
         }
     }
 
@@ -124,6 +125,7 @@ class Activity
         $m = null;
         preg_match('/entry-title">(.*?)<\/h1>/', $this->_raw, $m);
         $this->name = trim($m[1]);
+        $this->name = html_entity_decode($this->name);
     }
 
     /**
@@ -242,7 +244,11 @@ class Activity
                     $vv = 'http://www.scouterna.se/' . ltrim($vv, '/');
                 }
 
-                $this->attachments[] = $vv;
+                $att = $this->attachment($vv);
+
+                if ($att) {
+                    $this->attachments[] = $att;
+                }
             }
 
             $v = strip_tags($v);
@@ -251,5 +257,57 @@ class Activity
         }
 
         $this->description = $parts;
+    }
+
+    /**
+    * Activity::attachment()
+    * @access public
+    */
+    public function attachment($url)
+    {
+        $res = [];
+
+        $ext = [
+            'application/pdf' => 'pdf',
+            'image/png' => 'png',
+            'application/msword' => 'doc',
+            'image/jpeg' => 'jpg',
+
+            // Who doesn't love Microsoft Office?
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'docx',
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation' => 'pptx'
+        ];
+
+        $file = 'attachments/' . md5($url);
+
+        if (!file_exists($file)) {
+            file_put_contents($file, @file_get_contents($url));
+        }
+
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime = finfo_file($finfo, $file);
+
+        // Files that doesn't exist
+        if ($mime === 'inode/x-empty') {
+            return false;
+        }
+
+        $res['mime_type'] = $mime;
+        $res['original_url'] = $url;
+
+
+        if ($mime === 'text/html') {
+            return $res;
+        }
+
+        if (isset($ext[$mime])) {
+            $res['uri'] = 'attachments/' . md5($url) . '.' . $ext[$mime];
+        } else {
+
+            // Unrecognized filesx
+            var_dump($mime, $url);
+        }
+
+        return $res;
     }
 }

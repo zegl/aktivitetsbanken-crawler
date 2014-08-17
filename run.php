@@ -9,10 +9,12 @@ require_once 'models/Activity.php';
 
 $db = new DB();
 
+$db->truncate('attachments');
+
 $rows = $db->rows("SELECT handle FROM activities");
 
 foreach ($rows as $k => $v) {
-    echo $k . '/' . count($rows) . ' - ' . $v['handle'] . "\n";
+    // echo $k . '/' . count($rows) . ' - ' . $v['handle'] . "\n";
 
     $act = new Activity($v['handle']);
     $act->crawl();
