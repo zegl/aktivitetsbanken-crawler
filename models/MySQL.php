@@ -245,6 +245,13 @@ class MySQL
 	 */
     private function _query($sql)
     {
-        return $this->_connection()->query($sql);
+        $query = $this->_connection()->query($sql);
+
+        if ($this->_connection()->errno) {
+            var_dump($this->_connection()->error);
+            die();
+        }
+
+        return $query;
     }
 }

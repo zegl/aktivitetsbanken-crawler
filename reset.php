@@ -3,6 +3,8 @@
 require_once 'models/HTTP.php';
 require_once 'models/Activity.php';
 
+$db = new DB();
+
 $db->truncate('activities');
 $db->truncate('activities_names');
 $db->truncate('attachments');

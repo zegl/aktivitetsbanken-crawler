@@ -1,6 +1,6 @@
 <?php
 
-class Activity
+class Activity extends Common
 {
     private $handle;
     public $name;
@@ -21,8 +21,8 @@ class Activity
      */
     public function __construct($handle = false)
     {
+        parent::__construct();
         $this->handle = $handle;
-        $this->db = new DB();
     }
 
     /**
@@ -56,8 +56,7 @@ class Activity
             'participants_min' => $this->group_size_min,
             'participants_max' => $this->group_size_max,
             'age_min' => $this->age_min,
-            'age_max' => $this->age_max,
-            'raw' => $this->_raw
+            'age_max' => $this->age_max
         ];
 
         // Create activity
@@ -278,35 +277,41 @@ class Activity
             'application/vnd.openxmlformats-officedocument.presentationml.presentation' => 'pptx'
         ];
 
-        $file = 'attachments/' . md5($url);
+        $file = 'attachments/tmp_' . md5($url);
 
-        if (!file_exists($file)) {
-            file_put_contents($file, @file_get_contents($url));
-        }
+        $http = new HTTP();
+        $data = $http->url($url)->run()->get();
+        file_put_contents($file, $data);
 
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
         $mime = finfo_file($finfo, $file);
 
         // Files that doesn't exist
         if ($mime === 'inode/x-empty') {
+            unlink($file);
+
             return false;
         }
 
         $res['mime_type'] = $mime;
         $res['original_url'] = $url;
 
-
         if ($mime === 'text/html') {
+            unlink($file);
+
             return $res;
         }
 
         if (isset($ext[$mime])) {
             $res['uri'] = 'attachments/' . md5($url) . '.' . $ext[$mime];
+            file_put_contents($res['uri'], $data);
         } else {
 
             // Unrecognized filesx
             var_dump($mime, $url);
         }
+
+        unlink($file);
 
         return $res;
     }
