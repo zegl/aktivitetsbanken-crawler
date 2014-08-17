@@ -2,21 +2,16 @@
 
 class DB
 {
-	private $db;
-	
-	public function __construct()
-	{
-		require_once 'MySQL.php';
-		$this->db = new MySQL();
-	}
+    private $db;
 
-	public function insert($table, $values)
-	{
-		return $this->db->insert($table, $values);
-	}
+    public function __construct()
+    {
+        require_once 'MySQL.php';
+        $this->db = new MySQL();
+    }
 
-	public function truncate($table)
-	{
-		$this->db->truncate($table);
-	}
+    public function __call($method, $args)
+    {
+        return call_user_func_array(array($this->db, $method), $args);
+    }
 }

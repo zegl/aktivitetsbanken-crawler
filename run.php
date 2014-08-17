@@ -9,6 +9,25 @@ require_once 'models/Activity.php';
 
 $db = new DB();
 
+$rows = $db->rows("SELECT handle FROM activities WHERE raw IS NULL");
+
+foreach ($rows as $k => $v) {
+
+    echo $k . '/' . count($rows) . ' - ' . $v['handle'] . "\n";
+
+    $act = new Activity($v['handle']);
+    $act->crawl();
+    $act->save();
+}
+
+die();
+
+$act = new Activity('24-timmarshajk');
+$act->crawl();
+$act->save();
+
+die();
+
 $db->truncate('activities');
 $db->truncate('activities_names');
 $db->truncate('attachments');
@@ -22,13 +41,13 @@ preg_match_all('#<strong><a href="(.*?)aktivitetsbanken/aktivitet/(.*?)/">(.*?)<
 
 foreach ($matches[0] as $k => $v) {
 
-	var_dump($matches[2][$k]);
+    var_dump($matches[2][$k]);
 
-	$act = new Activity($matches[2][$k]);
-	
-	if (!$act->crawl()) {
-		continue;
-	}
+    $act = new Activity($matches[2][$k]);
 
-	$act->save();
+    if (!$act->crawl()) {
+        continue;
+    }
+
+    $act->save();
 }
