@@ -11,6 +11,7 @@ class Activity
     private $group_size_max;
     private $description;
     private $author;
+    private $attachments = [];
 
     private $_raw;
 
@@ -51,9 +52,7 @@ class Activity
             'handle' => $this->handle,
             'crawled_at' => 'CURRENT_TIMESTAMP',
             'premable' => $this->premable,
-            'description' => $this->description,
-            // 'security' => $this->security,
-            // 'tips' => $this->tips,
+            'description' => json_encode($this->description),
             'participants_min' => $this->group_size_min,
             'participants_max' => $this->group_size_max,
             'age_min' => $this->age_min,
@@ -61,7 +60,7 @@ class Activity
             'raw' => $this->_raw
         ];
 
-        if ($this->db->val("SELECT id FROM activities WHERE handle = '%s'", $this->handle)) {
+        if ($activity_id = $this->db->val("SELECT id FROM activities WHERE handle = '%s'", $this->handle)) {
             $this->db->update("UPDATE activities SET %s WHERE handle = '%s'", $data, $this->handle);
 
         } else {
@@ -74,6 +73,17 @@ class Activity
                 'name' => $this->name
             ]);
         }
+
+        foreach ($this->attachments as $uri) {
+            if ($this->db->val("SELECT id FROM attachments WHERE original_url = '%s' AND activity_id = %s", $uri, $activity_id)) {
+                continue;
+            }
+
+            $this->db->insert('attachments', [
+                'original_url' => $uri,
+                'activity_id' => $activity_id
+            ]);
+        }
     }
 
     /**
@@ -82,11 +92,18 @@ class Activity
      */
     public function crawl()
     {
-        $http = new HTTP();
-        $this->_raw = $http->url("http://www.scouterna.se/aktiviteter-och-lager/aktivitetsbanken/aktivitet/" . $this->handle . "/")->run()->get();
+        $raw_file = 'raw/' . $this->handle . '.html';
 
-        if (!$this->_raw) {
-            return false;
+        if (file_exists($raw_file)) {
+            $this->_raw = file_get_contents($raw_file);
+
+        } else {
+            $http = new HTTP();
+            $this->_raw = $http->url("http://www.scouterna.se/aktiviteter-och-lager/aktivitetsbanken/aktivitet/" . $this->handle . "/")->run()->get();
+
+            if (!$this->_raw) {
+                return false;
+            }
         }
 
         $this->name();
@@ -186,8 +203,10 @@ class Activity
      */
     private function description()
     {
+        $parts = [];
+
         $m = null;
-        preg_match('/<h2>Så genomför du aktiviteten<\/h2>(.*?)(<h2>(Aktiviteten är gjord av|Referenser)<\/h2>|<\/div><!-- .entry-content -->)/sim', $this->_raw, $m);
+        preg_match('/<h2>Så genomför du aktiviteten<\/h2>(.*?)<\/div><!-- .entry-content -->/sim', $this->_raw, $m);
 
         if (!isset($m[1])) {
             var_dump($m);
@@ -196,6 +215,41 @@ class Activity
             return;
         }
 
-        $this->description = trim($m[1]);
+        $res = $m[1];
+        $res = str_replace('<br />', '', $res);
+        $res = trim($res);
+
+        $m = null;
+        preg_match_all('/<h3>(.*?)<\/h3>/', $res, $m);
+
+        $last = 'Så genomför du aktiviteten';
+        foreach ($m[0] as $k => $v) {
+            $res = explode($v, $res);
+            $parts[$last] = $res[0];
+            $last = $m[1][$k];
+            $parts[$m[1][$k]] = $res = $res[1];
+        }
+
+        foreach ($parts as &$v) {
+
+            // Find attachments
+            $m = null;
+            preg_match_all('/<a href="(.*?)"(.*?)>(.*?)<\/a>/', $v, $m);
+
+            foreach ($m[1] as $vv) {
+
+                if (strpos($vv, 'http') !== 0) {
+                    $vv = 'http://www.scouterna.se/' . ltrim($vv, '/');
+                }
+
+                $this->attachments[] = $vv;
+            }
+
+            $v = strip_tags($v);
+            $v = html_entity_decode($v);
+            $v = trim($v);
+        }
+
+        $this->description = $parts;
     }
 }
