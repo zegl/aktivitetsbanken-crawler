@@ -52,7 +52,7 @@ class Activity extends Common
             'handle' => $this->handle,
             'crawled_at' => 'CURRENT_TIMESTAMP',
             'premable' => $this->premable,
-            'description' => json_encode($this->description),
+            'description' => $this->description,
             'participants_min' => $this->group_size_min,
             'participants_max' => $this->group_size_max,
             'age_min' => $this->age_min,
@@ -231,31 +231,56 @@ class Activity extends Common
             $parts[$m[1][$k]] = $res = $res[1];
         }
 
-        foreach ($parts as &$v) {
+        if (empty($parts)) {
+            $parts[$last] = $res;
+        }
 
-            // Find attachments
+        foreach ($parts as $k => $v) {
+
+            $this->find_attachments($v);
+
+            // Remove inlince css
+            if (strpos($v, "<style type='text/css'>") !== false) {
+                $m = null;
+                preg_match_all("/<style type='text\/css'>(.*?)<\/style>/sim", $v, $m);
+                foreach ($m[0] as $vv) {
+                    $v = str_replace($vv, '', $v);
+                }
+            }
+
+            // Inline lists
             $m = null;
-            preg_match_all('/<a href="(.*?)"(.*?)>(.*?)<\/a>/', $v, $m);
-
-            foreach ($m[1] as $vv) {
-
-                if (strpos($vv, 'http') !== 0) {
-                    $vv = 'http://www.scouterna.se/' . ltrim($vv, '/');
-                }
-
-                $att = $this->attachment($vv);
-
-                if ($att) {
-                    $this->attachments[] = $att;
-                }
+            preg_match_all("/<li>(.*?)<\/li>/sim", $v, $m);
+            foreach ($m[0] as $kk => $vv) {
+                $list = trim($m[1][$kk]);
+                $list = trim($list, ',.');
+                $list = '* ' . $list;
+                $v = str_replace($vv, $list, $v);
             }
 
             $v = strip_tags($v);
             $v = html_entity_decode($v);
             $v = trim($v);
+
+            unset($parts[$k]);
+
+            // Images in <h3>?
+            // Knivbeviset, I'm looking at you!
+            $this->find_attachments($k);
+            $k = strip_tags($k);
+            $k = html_entity_decode($k);
+
+            $parts[$k] = $v;
         }
 
-        $this->description = $parts;
+        // Convert to markdown
+        $markdown = '';
+        foreach ($parts as $header => $content) {
+            $markdown .= "# " . $header . "\n";
+            $markdown .= $content . "\n\n";
+        }
+
+        $this->description = trim($markdown);
     }
 
     /**
@@ -314,5 +339,29 @@ class Activity extends Common
         unlink($file);
 
         return $res;
+    }
+
+    /**
+    * Activity::find_attachments()
+    * @access private
+    */
+    private function find_attachments($v)
+    {
+        // Find attachments
+        $m = null;
+        preg_match_all('/<a href="(.*?)"(.*?)>(.*?)<\/a>/', $v, $m);
+
+        foreach ($m[1] as $vv) {
+
+            if (strpos($vv, 'http') !== 0) {
+                $vv = 'http://www.scouterna.se/' . ltrim($vv, '/');
+            }
+
+            $att = $this->attachment($vv);
+
+            if ($att) {
+                $this->attachments[] = $att;
+            }
+        }
     }
 }

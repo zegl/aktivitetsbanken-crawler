@@ -13,6 +13,7 @@ $db = new DB();
 
 $db->truncate('attachments');
 
+// $rows = $db->rows("SELECT handle FROM activities where handle = 'knivbeviset'");
 $rows = $db->rows("SELECT handle FROM activities");
 
 foreach ($rows as $k => $v) {
