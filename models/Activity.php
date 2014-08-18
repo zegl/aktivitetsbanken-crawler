@@ -59,6 +59,8 @@ class Activity extends Common
             'age_max' => $this->age_max
         ];
 
+        file_put_contents('md/' . $this->handle . '.md', $this->description);
+
         // Create activity
         if ($activity_id = $this->db->val("SELECT id FROM activities WHERE handle = '%s'", $this->handle)) {
             $this->db->update("UPDATE activities SET %s WHERE handle = '%s'", $data, $this->handle);
@@ -125,6 +127,7 @@ class Activity extends Common
         preg_match('/entry-title">(.*?)<\/h1>/', $this->_raw, $m);
         $this->name = trim($m[1]);
         $this->name = html_entity_decode($this->name);
+        $this->name = str_replace('”', '"', $this->name);
     }
 
     /**
@@ -217,18 +220,25 @@ class Activity extends Common
         }
 
         $res = $m[1];
-        $res = str_replace('<br />', '', $res);
+        $res = str_replace(['<br />','<br>'], "\n", $res);
         $res = trim($res);
 
+        // Convert html entities to utf8
+        $res = html_entity_decode($res);
+
         $m = null;
-        preg_match_all('/<h3>(.*?)<\/h3>/', $res, $m);
+
+        // <h2>Swag</h2>
+        // <h3>Swag</h3>
+        // ”’Swag”’
+        preg_match_all('/(<h(2|3)>|”’)(.*?)(<\/h(2|3)>|”’)/', $res, $m);
 
         $last = 'Så genomför du aktiviteten';
         foreach ($m[0] as $k => $v) {
             $res = explode($v, $res);
             $parts[$last] = $res[0];
-            $last = $m[1][$k];
-            $parts[$m[1][$k]] = $res = $res[1];
+            $last = $m[3][$k];
+            $parts[$m[3][$k]] = $res = $res[1];
         }
 
         if (empty($parts)) {
@@ -258,8 +268,20 @@ class Activity extends Common
                 $v = str_replace($vv, $list, $v);
             }
 
+            // More lists
+            $v = str_replace('•', '*', $v);
+
+            // Odd quotes
+            $v = str_replace('”', '"', $v);
+
+            // Remove HTML-tags
             $v = strip_tags($v);
-            $v = html_entity_decode($v);
+
+            // Double newlines
+            $v = preg_replace('/(?:(?:\r\n|\r|\n)\s*){2}/s', "\n\n", $v);
+
+            // Unicode whitespace
+            $v = preg_replace('/^[\pZ\pC]+|[\pZ\pC]+$/u', '', $v);
             $v = trim($v);
 
             unset($parts[$k]);
@@ -270,7 +292,9 @@ class Activity extends Common
             $k = strip_tags($k);
             $k = html_entity_decode($k);
 
-            $parts[$k] = $v;
+            if ($v) {
+                $parts[$k] = $v;
+            }
         }
 
         // Convert to markdown
@@ -321,7 +345,12 @@ class Activity extends Common
         $res['mime_type'] = $mime;
         $res['original_url'] = $url;
 
-        if ($mime === 'text/html') {
+        $skip = [
+            "text/html" => true,
+            "text/plain" => true
+        ];
+
+        if (isset($skip[$mime])) {
             unlink($file);
 
             return $res;
