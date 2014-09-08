@@ -17,8 +17,18 @@ $db->truncate('attachments');
 $rows = $db->rows("SELECT handle FROM activities");
 
 foreach ($rows as $k => $v) {
+
+	if ($k < 560) {
+		continue;
+	}
+
     echo $k . '/' . count($rows) . ' - ' . $v['handle'] . "\n";
     $act = new Activity($v['handle']);
     $act->crawl();
     $act->save();
 }
+
+die();
+
+asort(Activity::$types);
+var_dump(Activity::$types);

@@ -1,5 +1,7 @@
 <?php
 
+require_once 'ScoutAPI.php';
+
 class Activity extends Common
 {
     private $handle;
@@ -10,10 +12,13 @@ class Activity extends Common
     private $group_size_min;
     private $group_size_max;
     private $description;
+    private $markdown;
     private $author;
     private $attachments = [];
+    private $descr = [];
 
     private $_raw;
+    private $scoutapi;
 
     /**
      * Activity::__construct()
@@ -23,6 +28,7 @@ class Activity extends Common
     {
         parent::__construct();
         $this->handle = $handle;
+        $this->scoutapi = new ScoutAPI();
     }
 
     /**
@@ -52,14 +58,14 @@ class Activity extends Common
             'handle' => $this->handle,
             'crawled_at' => 'CURRENT_TIMESTAMP',
             'premable' => $this->premable,
-            'description' => $this->description,
+            'description' => $this->markdown,
             'participants_min' => $this->group_size_min,
             'participants_max' => $this->group_size_max,
             'age_min' => $this->age_min,
             'age_max' => $this->age_max
         ];
 
-        file_put_contents('md/' . $this->handle . '.md', $this->description);
+        file_put_contents('md/' . $this->handle . '.md', $this->markdown);
 
         // Create activity
         if ($activity_id = $this->db->val("SELECT id FROM activities WHERE handle = '%s'", $this->handle)) {
@@ -86,6 +92,16 @@ class Activity extends Common
         } else {
             $this->db->insert('activities_names', ['name' => $this->name, 'activity_id' => $activity_id]);
         }
+
+        $json = $data;
+        $json['descr_introduction'] = $this->premable;
+        $json['name'] = $this->name;
+
+        foreach ($this->descr as $k => $v) {
+            $json[$k] = $v;
+        }
+        
+        $this->scoutapi->activity_save($json);
     }
 
     /**
@@ -291,20 +307,70 @@ class Activity extends Common
             $this->find_attachments($k);
             $k = strip_tags($k);
             $k = html_entity_decode($k);
+            $k = trim($k, ':');
 
             if ($v) {
                 $parts[$k] = $v;
             }
         }
 
+        $this->description = $parts;
+
         // Convert to markdown
         $markdown = '';
         foreach ($parts as $header => $content) {
+
+            if (isset(self::$types[$header])) {
+                self::$types[$header]++;
+            } else {
+                self::$types[$header] = 1;
+            }
+
             $markdown .= "# " . $header . "\n";
             $markdown .= $content . "\n\n";
         }
 
-        $this->description = trim($markdown);
+        $this->markdown = trim($markdown);
+        $this->split_description($parts);
+    }
+
+    public static $types = [];
+    private function split_description($parts)
+    {
+        $p = [
+            "Detta material behöver du" => "descr_material",
+            "Säkerhet" => "descr_safety",
+            "Förberedelse" => "descr_prepare"
+        ];
+
+        $res = [];
+
+        foreach ($parts as $key => $content) {
+
+            $header = $key;
+
+            if (!isset($p[$key])) {
+                $key = "descr_main";
+            } else {
+                $key = $p[$key];
+            }
+
+            if (!isset($res[$key])) {
+                $res[$key] = "";
+            }
+
+            if ($res[$key] !== "") {
+                $res[$key] .= "# " . $header . "\n";
+            }
+
+            $res[$key] .= $content . "\n\n";
+        }
+
+        foreach ($res as $k => $v) {
+            $res[$k] = trim($v);
+        }
+
+        $this->descr = $res;
     }
 
     /**
@@ -361,8 +427,8 @@ class Activity extends Common
             file_put_contents($res['uri'], $data);
         } else {
 
-            // Unrecognized filesx
-            var_dump($mime, $url);
+            // Unrecognized files
+            // var_dump($mime, $url);
         }
 
         unlink($file);

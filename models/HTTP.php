@@ -5,7 +5,8 @@ class HTTP
 
     private $ch;
     private $result;
-    private $cache_path;
+    public $cache_path;
+    private $headers = [];
 
     public function __construct()
     {
@@ -27,12 +28,23 @@ class HTTP
         return $this;
     }
 
-    public function post($data)
+    public function data($data, $content_type = "application/x-www-form-urlencoded")
     {
         $this->cache_path = false;
-        curl_setopt($this->ch, CURLOPT_POSTFIELDS, http_build_query($data));
+
+        if ($content_type === "application/json") {
+            curl_setopt($this->ch, CURLOPT_POSTFIELDS, json_encode($data));
+        } else {
+            curl_setopt($this->ch, CURLOPT_POSTFIELDS, http_build_query($data));
+        }
+
+        $this->header('Content-Type', $content_type);
 
         return $this;
+    }
+
+    public function method($method) {
+        curl_setopt($this->ch, CURLOPT_CUSTOMREQUEST, $method);
     }
 
     public function run()
@@ -42,6 +54,8 @@ class HTTP
 
             return $this;
         }
+
+        $this->generate_headers();
 
         curl_setopt($this->ch, CURLOPT_RETURNTRANSFER, true);
         $this->result = curl_exec($this->ch);
@@ -56,6 +70,21 @@ class HTTP
     public function user_agent($user_agent)
     {
         curl_setopt($this->ch, CURLOPT_USERAGENT, $user_agent);
+    }
+
+    public function header($key, $val) {
+        $this->headers[$key] = $val;
+    }
+
+    public function generate_headers()
+    {
+        $headers = [];
+
+        foreach ($this->headers as $key => $val) {
+            $headers[] = $key . ': ' . $val;
+        }
+
+        curl_setopt($this->ch, CURLOPT_HTTPHEADER, $headers);
     }
 
     public function get()
