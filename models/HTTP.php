@@ -5,8 +5,11 @@ class HTTP
 
     private $ch;
     private $result;
-    public $cache_path;
+    private $cache_path = null;
+
     private $headers = [];
+    private $url;
+    private $method = 'GET';
 
     public function __construct()
     {
@@ -22,11 +25,19 @@ class HTTP
 
     public function url($url)
     {
-        $this->cache_path = 'cache/' . md5($url);
-        // var_dump($url);
+        if ($this->cache_path !== false) {
+            $this->cache_path = 'cache/' . md5($url);
+        }
+
+        $this->url = $url;
         curl_setopt($this->ch, CURLOPT_URL, $url);
 
         return $this;
+    }
+
+    public function disable_cache()
+    {
+        $this->cache_path = false;
     }
 
     public function data($data, $content_type = "application/x-www-form-urlencoded")
@@ -40,11 +51,13 @@ class HTTP
         }
 
         $this->header('Content-Type', $content_type);
+        $this->method('POST');
 
         return $this;
     }
 
     public function method($method) {
+        $this->method = $method;
         curl_setopt($this->ch, CURLOPT_CUSTOMREQUEST, $method);
     }
 
@@ -58,8 +71,11 @@ class HTTP
 
         $this->generate_headers();
 
+        $t = microtime(true);
         curl_setopt($this->ch, CURLOPT_RETURNTRANSFER, true);
         $this->result = curl_exec($this->ch);
+
+        echo "Fetching $this->method $this->url took " . (microtime(true) - $t) . "s\n";
 
         if ($this->cache_path) {
             file_put_contents($this->cache_path, $this->result);
@@ -97,7 +113,7 @@ class HTTP
     {
         $json = json_decode($this->result, true);
 
-        if (json_last_error() == JSON_ERROR_NONE) {
+        if (json_last_error() === JSON_ERROR_NONE) {
             return $json;
         }
 

@@ -208,7 +208,13 @@ class SQL
 	 */
     public function _query($sql)
     {
+        $t = microtime(true);
         $query = $this->_connection()->query($sql);
+        $diff = microtime(true) - $t;
+
+        if ($diff > 0.1) {
+            echo "SQL $diff - $sql\n";
+        }
 
         $err = false;
 

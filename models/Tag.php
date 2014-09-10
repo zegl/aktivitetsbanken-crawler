@@ -1,16 +1,21 @@
 <?php
 
+require_once 'ScoutAPI/Category.php';
+
 class Tag extends Common
 {
-
     private $name;
     private $handle;
     private $id;
+
+    private $ScoutAPI;
 
     public function __construct($handle, $name)
     {
         $this->name = $name;
         $this->handle = $handle;
+
+        $this->ScoutAPI = new \ScoutAPI\Category();
 
         parent::__construct();
     }
@@ -18,6 +23,10 @@ class Tag extends Common
     public function save()
     {
         $this->id = $this->db->insert('categories', ['name' => $this->name, 'handle' => $this->handle]);
+        $this->ScoutAPI->save([
+            'name' => $this->name,
+            'group' => $this->handle
+        ]);
     }
 
     public function crawl($page = 1)

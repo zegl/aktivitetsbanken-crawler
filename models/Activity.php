@@ -1,6 +1,6 @@
 <?php
 
-require_once 'ScoutAPI.php';
+require_once 'ScoutAPI/Activity.php';
 
 class Activity extends Common
 {
@@ -18,7 +18,6 @@ class Activity extends Common
     private $descr = [];
 
     private $_raw;
-    private $scoutapi;
 
     /**
      * Activity::__construct()
@@ -28,7 +27,6 @@ class Activity extends Common
     {
         parent::__construct();
         $this->handle = $handle;
-        $this->scoutapi = new ScoutAPI();
     }
 
     /**
@@ -52,7 +50,7 @@ class Activity extends Common
      * Activity::save()
      * @access public
      */
-    public function save()
+    public function save($scoutapi_upload = false)
     {
         $data = [
             'handle' => $this->handle,
@@ -100,8 +98,27 @@ class Activity extends Common
         foreach ($this->descr as $k => $v) {
             $json[$k] = $v;
         }
+
+        $categories = $this->db->rows("SELECT * FROM activities_categories ac JOIN categories c ON c.id = ac.category_id WHERE ac.activity_id = %s", $activity_id);
+        $json['categories'] = [];
+        $scout_category = new \ScoutAPI\Activity();
+
+        foreach ($categories as $category) {
+            $scout_category_id = $scout_category->exists($category['name']);
+
+            if ($scout_category_id) {
+                $json['categories'][] = $scout_category_id;
+            } else {
+                var_dump($category);
+            }
+        }
         
-        // $this->scoutapi->activity_save($json);
+        if ($scoutapi_upload) {
+            $scout_activity = new \ScoutAPI\Activity();
+            $scout_activity->save($json);
+        }
+
+        return true;
     }
 
     /**
