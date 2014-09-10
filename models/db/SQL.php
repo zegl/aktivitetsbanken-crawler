@@ -1,15 +1,15 @@
 <?php
 
-class MySQL
+class SQL
 {
-    private $conn;
+    public $conn;
 
     public static $allowed_variables = [
         "CURRENT_TIMESTAMP" => true
     ];
 
     /**
-	 * MySQL::__construct()
+	 * SQL::__construct()
 	 * @access public
 	 */
     public function __construct()
@@ -18,7 +18,7 @@ class MySQL
     }
 
     /**
-	 * MySQL::insert()
+	 * SQL::insert()
 	 * @access public
 	 */
     public function insert($table = false, $data = [])
@@ -64,23 +64,23 @@ class MySQL
             return false;
         }
 
-        return $this->_connection()->insert_id;
+        return $this->result_insert_id();
     }
 
     /**
-	 * MySQL::truncate()
+	 * SQL::truncate()
 	 * @access public
 	 */
     public function truncate($table)
     {
-        $sql = "TRUNCATE TABLE %s";
+        $sql = "DELETE FROM %s";
         $query = $this->_format($sql, ['', $table]);
 
         return $this->_query($query);
     }
 
     /**
-	 * MySQL::val()
+	 * SQL::val()
 	 * @access public
 	 */
     public function val($query)
@@ -92,13 +92,12 @@ class MySQL
             return false;
         }
 
-        $res = $res->fetch_array();
-
+        $res = $this->result_array($res, true);
         return $res[0];
     }
 
     /**
-	 * MySQL::row()
+	 * SQL::row()
 	 * @access public
 	 */
     public function row($query)
@@ -110,16 +109,11 @@ class MySQL
             return false;
         }
 
-        $res = $data->fetch_assoc();
-        if (!$res) {
-            return false;
-        }
-
-        return $res;
+        return $this->result_assoc($data, true);
     }
 
     /**
-	 * MySQL::rows()
+	 * SQL::rows()
 	 * @access public
 	 */
     public function rows($query)
@@ -131,17 +125,11 @@ class MySQL
             return false;
         }
 
-        $res = array();
-
-        while ($d = $data->fetch_assoc()) {
-            $res[] = $d;
-        }
-
-        return $res;
+        return $this->result_assoc($data);
     }
 
     /**
-	 * MySQL::update()
+	 * SQL::update()
 	 * @access public
 	 */
     public function update($query, $data = array())
@@ -189,39 +177,14 @@ class MySQL
             return false;
         }
 
-        return $this->_connection()->affected_rows;
+        return $this->result_affected_rows();
     }
 
     /**
-	 * MySQL::_connection()
+	 * SQL::_format()
 	 * @access private
 	 */
-    private function _connection()
-    {
-        if ($this->conn) {
-            return $this->conn;
-        }
-
-        $this->conn = new MySQLi('localhost', 'root', '', 'aktivitetsbanken');
-        $this->conn->set_charset('utf8');
-
-        return $this->conn;
-    }
-
-    /**
-	 * MySQL::_escape()
-	 * @access private
-	 */
-    private function _escape($v)
-    {
-        return $this->_connection()->real_escape_string($v);
-    }
-
-    /**
-	 * MySQL::_format()
-	 * @access private
-	 */
-    private function _format($query, $args = array(), $escape = true)
+    public function _format($query, $args = array(), $escape = true)
     {
         // Remove first arg
         $args = array_slice($args, 1);
@@ -240,15 +203,28 @@ class MySQL
     }
 
     /**
-	 * MySQL::_query()
+	 * SQL::_query()
 	 * @access private
 	 */
-    private function _query($sql)
+    public function _query($sql)
     {
         $query = $this->_connection()->query($sql);
 
-        if ($this->_connection()->errno) {
-            var_dump($this->_connection()->error);
+        $err = false;
+
+        // SQLite3
+        if ($query === false) {
+            $err = $this->_connection()->lastErrorMsg();
+        }
+
+        // MySQL
+        if(isset($this->_connection()->errno) && $this->_connection()->errno) {
+            $err = $this->_connection()->error;
+        }
+
+        if ($err !== false) {
+            var_dump(debug_backtrace());
+            var_dump($err);
             die();
         }
 

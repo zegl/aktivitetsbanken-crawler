@@ -101,7 +101,7 @@ class Activity extends Common
             $json[$k] = $v;
         }
         
-        $this->scoutapi->activity_save($json);
+        // $this->scoutapi->activity_save($json);
     }
 
     /**

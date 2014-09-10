@@ -66,25 +66,25 @@ class ScoutAPI
 		return $this->activity_create($json);
 	}
 
-	private $all_activities = [];
+	private static $all_activities = [];
 	public function activity_exists($name)
 	{
-		if (isset($this->all_activities[$name])) {
-			return $this->all_activities[$name];
+		if (isset(self::$all_activities[$name])) {
+			return self::$all_activities[$name];
 		}
 
-		if ($this->all_activities !== []) {
+		if (!empty(self::$all_activities)) {
 			return false;
 		}
 
 		list($code, $res) = $this->api("GET", "activities", null, false);
 
 		foreach ($res as $v) {
-			$this->all_activities[$v['name']] = $v['id'];
+			self::$all_activities[$v['name']] = $v['id'];
 		}
 
-		if (isset($this->all_activities[$name])) {
-			return $this->all_activities[$name];
+		if (isset(self::$all_activities[$name])) {
+			return self::$all_activities[$name];
 		}
 
 		return false;
@@ -146,6 +146,8 @@ class ScoutAPI
 	 */
 	public function activity_create($json)
 	{
-		return $this->api('POST', 'activities', $json);
+		$res = $this->api('POST', 'activities', $json);
+		var_dump($res);
+		die();
 	}
 }

@@ -6,8 +6,8 @@ class DB
 
     public function __construct()
     {
-        require_once 'MySQL.php';
-        $this->db = new MySQL();
+        require_once 'db/SQLite.php';
+        $this->db = new SQLite();
     }
 
     public function __call($method, $args)

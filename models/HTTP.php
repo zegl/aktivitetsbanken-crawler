@@ -23,6 +23,7 @@ class HTTP
     public function url($url)
     {
         $this->cache_path = 'cache/' . md5($url);
+        // var_dump($url);
         curl_setopt($this->ch, CURLOPT_URL, $url);
 
         return $this;
