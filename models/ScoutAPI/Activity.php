@@ -47,7 +47,7 @@ class Activity extends ScoutAPI
 		return $this->create($json);
 	}
 
-	private static $activity_all = false
+	private static $activity_all = false;
 	public function exists($name)
 	{
 		if (isset(self::$activity_all[$name])) {
@@ -61,6 +61,7 @@ class Activity extends ScoutAPI
 		list($code, $res) = $this->api("GET", "activities", null, false);
 
 		self::$activity_all = [];
+
 		foreach ($res as $v) {
 			self::$activity_all[$v['name']] = $v['id'];
 		}

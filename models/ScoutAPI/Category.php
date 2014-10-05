@@ -35,7 +35,8 @@ class Category extends ScoutAPI
 		return $this->create($json);
 	}
 
-	private static $category_all = false
+	private static $category_all = false;
+	
 	public function exists($name)
 	{
 		if (isset(self::$category_all[$name])) {
