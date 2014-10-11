@@ -4,8 +4,11 @@ namespace ScoutAPI;
 
 class ScoutAPI
 {
-	public $url = "http://infinite-forest-4832.herokuapp.com/api/v1/";
-	public static $token = '80617507d3';
+	// public $url = "http://infinite-forest-4832.herokuapp.com/api/v1/";
+	public $url = "http://altaret.gustav.tv:3000/api/v1/";
+
+	// public static $token = "80617507d3";
+	public static $token = "dbf815c37b";
 
 	public function api($method, $url, $data = null, $allow_cache = true)
 	{
@@ -39,7 +42,7 @@ class ScoutAPI
 		$json = $http->get_json();
 
 		// Authentication has probably failed, register and try again
-		if ($json === false) {
+		if ($http->get_response_code() === 401) {
 			$this->register();
 			$this->api($method, $url, $data, $allow_cache);
 		}

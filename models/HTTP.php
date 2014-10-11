@@ -66,6 +66,8 @@ class HTTP
         if ($this->cache_path && file_exists($this->cache_path)) {
             $this->result = file_get_contents($this->cache_path);
 
+            echo "Cache -  $this->url\n";
+
             return $this;
         }
 
@@ -73,9 +75,12 @@ class HTTP
 
         $t = microtime(true);
         curl_setopt($this->ch, CURLOPT_RETURNTRANSFER, true);
+
+        echo "$this->method - $this->url - ";
+        
         $this->result = curl_exec($this->ch);
 
-        echo "Fetching $this->method $this->url took " . (microtime(true) - $t) . "s\n";
+        echo (microtime(true) - $t) . "s\n";
 
         if ($this->cache_path) {
             file_put_contents($this->cache_path, $this->result);

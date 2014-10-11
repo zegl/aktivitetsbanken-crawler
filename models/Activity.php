@@ -1,6 +1,9 @@
 <?php
 
 require_once 'ScoutAPI/Activity.php';
+require_once 'ScoutAPI/Reference.php';
+require_once 'ScoutAPI/Media_file.php';
+require_once 'ScoutAPI/Category.php';
 
 class Activity extends Common
 {
@@ -99,9 +102,13 @@ class Activity extends Common
             $json[$k] = $v;
         }
 
-        $categories = $this->db->rows("SELECT * FROM activities_categories ac JOIN categories c ON c.id = ac.category_id WHERE ac.activity_id = %s", $activity_id);
         $json['categories'] = [];
-        $scout_category = new \ScoutAPI\Activity();
+        $json['references'] = [];
+        $json['media_files'] = [];
+
+        $categories = $this->db->rows("SELECT * FROM activities_categories ac JOIN categories c ON c.id = ac.category_id WHERE ac.activity_id = %s", $activity_id);
+        
+        $scout_category = new \ScoutAPI\Category();
 
         foreach ($categories as $category) {
             $scout_category_id = $scout_category->exists($category['name']);
@@ -112,11 +119,47 @@ class Activity extends Common
                 var_dump($category);
             }
         }
-        
-        if ($scoutapi_upload) {
-            $scout_activity = new \ScoutAPI\Activity();
-            $scout_activity->save($json);
+
+        if (!$scoutapi_upload) {
+            return true;
         }
+
+        // Categorize attachments into references and media files
+        $references = [
+            "text/html" => true
+        ];
+
+        foreach ($this->attachments as $attachment) {
+
+            if (isset($references[$attachment["mime_type"]])) {
+                $att = new \ScoutAPI\Reference();
+                $att_data = [
+                    "uri" => $attachment["original_url"]
+                ];
+
+            } else {
+                $att = new \ScoutAPI\Media_file();
+                $att_data = [
+                    "mime_type" => $attachment["mime_type"],
+                    "uri" => $attachment["original_url"]
+                ];
+            }
+
+            $id = $att->exists($att_data["uri"]);
+
+            if ($id === false) {
+                $id = $att->save($att_data);
+            }
+
+            if (isset($references[$attachment["mime_type"]])) {
+                $json['references'][] = $id;
+            } else {
+                $json['media_files'][] = $id;
+            }
+        }
+        
+        $scout_activity = new \ScoutAPI\Activity();
+        $res = $scout_activity->save($json);
 
         return true;
     }
