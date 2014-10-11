@@ -2,9 +2,9 @@
 
 require_once 'SQL.php';
 
-class MySQL extends SQL 
+class MySQL extends SQL
 {
-	/**
+    /**
 	 * MySQL::_connection()
 	 * @access public
 	 */
@@ -31,19 +31,19 @@ class MySQL extends SQL
 
     private function _result_fetch($method, $data, $single = false)
     {
-    	$res = [];
+        $res = [];
 
-    	while ($d = $data->$method()) {
+        while ($d = $data->$method()) {
 
-    		if ($single) {
-    			return $d;
-    		}
+            if ($single) {
+                return $d;
+            }
 
             $res[] = $d;
         }
 
         if ($single) {
-        	return false;
+            return false;
         }
 
         return $res;
@@ -51,12 +51,12 @@ class MySQL extends SQL
 
     public function result_assoc($data, $single = false)
     {
-    	return $this->_result_fetch('fetch_assoc', $data, $single);
+        return $this->_result_fetch('fetch_assoc', $data, $single);
     }
 
     public function result_array($data, $single = false)
     {
-    	return $this->_result_fetch('fetch_array', $data, $single);
+        return $this->_result_fetch('fetch_array', $data, $single);
     }
 
     public function result_insert_id()

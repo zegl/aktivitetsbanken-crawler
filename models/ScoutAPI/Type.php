@@ -6,99 +6,99 @@ require_once 'ScoutAPI.php';
 
 class Type extends ScoutAPI
 {
-	// Key, eg "name"
-	public $unique;
+    // Key, eg "name"
+    public $unique;
 
-	// [key => default, ... ]
-	public $keys = [];
+    // [key => default, ... ]
+    public $keys = [];
 
-	// Api key, eg. "categories"
-	public $api_key;
+    // Api key, eg. "categories"
+    public $api_key;
 
-	public function save($array)
-	{
-		if (!isset($array[$this->unique])) {
-			return false;
-		}
+    public function save($array)
+    {
+        if (!isset($array[$this->unique])) {
+            return false;
+        }
 
-		// Allowed keys
-		foreach ($array as $k => $v) {
-			if (!isset($this->keys[$k])) {
-				unset($array[$k]);
-			}
-		}
+        // Allowed keys
+        foreach ($array as $k => $v) {
+            if (!isset($this->keys[$k])) {
+                unset($array[$k]);
+            }
+        }
 
-		// Set defaults
-		foreach ($this->keys as $key => $default) {
-			if (!isset($array[$key])) {
-				$array[$key] = $default;
-			}
-		}
+        // Set defaults
+        foreach ($this->keys as $key => $default) {
+            if (!isset($array[$key])) {
+                $array[$key] = $default;
+            }
+        }
 
-		if ($this->exists($array[$this->unique])) {
-			return $this->update($array);
-		}
+        if ($this->exists($array[$this->unique])) {
+            return $this->update($array);
+        }
 
-		return $this->create($array);
-	}
+        return $this->create($array);
+    }
 
-	private static $all = [];
-	
-	public function exists($value)
-	{
-		$class = get_class($this);
+    private static $all = [];
 
-		if (isset(self::$all[$class][$value])) {
-			return self::$all[$class][$value];
-		}
+    public function exists($value)
+    {
+        $class = get_class($this);
 
-		if (isset(self::$all[$class])) {
-			return false;
-		}
+        if (isset(self::$all[$class][$value])) {
+            return self::$all[$class][$value];
+        }
 
-		list($code, $res) = $this->api("GET", $this->api_key, null, false);
+        if (isset(self::$all[$class])) {
+            return false;
+        }
 
-		self::$all[$class] = [];
+        list($code, $res) = $this->api("GET", $this->api_key, null, false);
 
-		foreach ($res as $v) {
-			self::$all[$class][$v[$this->unique]] = (int) $v['id'];
-		}
+        self::$all[$class] = [];
 
-		if (isset(self::$all[$class][$value])) {
-			return self::$all[$class][$value];
-		}
+        foreach ($res as $v) {
+            self::$all[$class][$v[$this->unique]] = (int) $v['id'];
+        }
 
-		return false;
-	}
+        if (isset(self::$all[$class][$value])) {
+            return self::$all[$class][$value];
+        }
 
-	public function update($array)
-	{
-		$id = $this->exists($array[$this->unique]);
+        return false;
+    }
 
-		if ($id === false) {
-			return false;
-		}
+    public function update($array)
+    {
+        $id = $this->exists($array[$this->unique]);
 
-		list($code, $res) = $this->api('PUT', $this->api_key . '/' . $id, $array);
+        if ($id === false) {
+            return false;
+        }
 
-		if ($code === 204) {
-			return (int) $id;
-		}
+        list($code, $res) = $this->api('PUT', $this->api_key . '/' . $id, $array);
 
-		return false;
-	}
+        if ($code === 204) {
+            return (int) $id;
+        }
 
-	public function create($data)
-	{
-		list($code, $res) = $this->api('POST', $this->api_key, $data);
+        return false;
+    }
 
-		if ($code !== 201) {
-			var_dump($code, $res, $data);
-			die();
-		}
+    public function create($data)
+    {
+        list($code, $res) = $this->api('POST', $this->api_key, $data);
 
-		self::$all[get_class($this)][$res[$this->unique]] = (int) $res['id'];
+        if ($code !== 201) {
+            var_dump($code, $res, $data);
+            die();
+        }
 
-		return (int) $res['id'];
-	}
+        self::$all[get_class($this)][$res[$this->unique]] = (int) $res['id'];
+
+        return (int) $res['id'];
+    }
 }

@@ -107,7 +107,7 @@ class Activity extends Common
         $json['media_files'] = [];
 
         $categories = $this->db->rows("SELECT * FROM activities_categories ac JOIN categories c ON c.id = ac.category_id WHERE ac.activity_id = %s", $activity_id);
-        
+
         $scout_category = new \ScoutAPI\Category();
 
         foreach ($categories as $category) {
@@ -157,7 +157,7 @@ class Activity extends Common
                 $json['media_files'][] = $id;
             }
         }
-        
+
         $scout_activity = new \ScoutAPI\Activity();
         $res = $scout_activity->save($json);
 

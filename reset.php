@@ -5,10 +5,10 @@ require_once 'models/Activity.php';
 
 $db = new DB();
 
-$db->truncate('activities');
-$db->truncate('activities_names');
-$db->truncate('attachments');
-$db->truncate('categories');
+//$db->truncate('activities');
+//$db->truncate('activities_names');
+//$db->truncate('attachments');
+//$db->truncate('categories');
 
 $http = new HTTP();
 $html = $http->url("http://www.scouterna.se/aktiviteter-och-lager/aktivitetsbanken/alla-aktiviteter/")->run()->get();

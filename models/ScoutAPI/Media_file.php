@@ -7,11 +7,11 @@ require_once 'Type.php';
 
 class Media_file extends Type
 {
-	public $unique = "uri";
-	public $api_key = "media_files";
+    public $unique = "uri";
+    public $api_key = "media_files";
 
-	public $keys = [
-		"mime_type" => "",
-		"uri" => ""
-	];
+    public $keys = [
+        "mime_type" => "",
+        "uri" => ""
+    ];
 }

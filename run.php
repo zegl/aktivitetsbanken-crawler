@@ -37,16 +37,12 @@ foreach ($matches[0] as $k => $v) {
 //$tags->tags();
 
 // Step 4 - Finalize and save to ScoutAPI
+$activities = $db->rows("SELECT handle FROM activities WHERE id = 71");
 $activities = $db->rows("SELECT handle FROM activities");
 
 foreach ($activities as $k => $activity) {
-
-	if ($k < 922) {
-		continue;
-	}
-
-	echo ($k+1) . "/" . count($activities) . " = " . $activity['handle'] . "\n";
-	$act = new Activity($activity['handle']);
-	$act->crawl();
-	$act->save(true);
+    echo ($k+1) . "/" . count($activities) . " = " . $activity['handle'] . "\n";
+    $act = new Activity($activity['handle']);
+    $act->crawl();
+    $act->save(true);
 }

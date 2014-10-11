@@ -56,7 +56,8 @@ class HTTP
         return $this;
     }
 
-    public function method($method) {
+    public function method($method)
+    {
         $this->method = $method;
         curl_setopt($this->ch, CURLOPT_CUSTOMREQUEST, $method);
     }
@@ -77,7 +78,7 @@ class HTTP
         curl_setopt($this->ch, CURLOPT_RETURNTRANSFER, true);
 
         echo "$this->method - $this->url - ";
-        
+
         $this->result = curl_exec($this->ch);
 
         echo (microtime(true) - $t) . "s\n";
@@ -94,7 +95,8 @@ class HTTP
         curl_setopt($this->ch, CURLOPT_USERAGENT, $user_agent);
     }
 
-    public function header($key, $val) {
+    public function header($key, $val)
+    {
         $this->headers[$key] = $val;
     }
 

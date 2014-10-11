@@ -2,9 +2,9 @@
 
 require_once 'SQL.php';
 
-class SQLite extends SQL 
+class SQLite extends SQL
 {
-	/**
+    /**
 	 * SQLite::_connection()
 	 * @access public
 	 */
@@ -30,19 +30,19 @@ class SQLite extends SQL
 
     private function _result_fetch($setting, $data, $single = false)
     {
-    	$res = [];
-    	
-		while($d = $data->fetchArray($setting)) {
+        $res = [];
 
-			if ($single) {
-				return $d;
-			}
+        while ($d = $data->fetchArray($setting)) {
+
+            if ($single) {
+                return $d;
+            }
 
             $res[] = $d;
         }
 
         if ($single) {
-        	return false;
+            return false;
         }
 
         return $res;
@@ -50,12 +50,12 @@ class SQLite extends SQL
 
     public function result_assoc($data, $single = false)
     {
-		return $this->_result_fetch(SQLITE3_ASSOC, $data, $single);
+        return $this->_result_fetch(SQLITE3_ASSOC, $data, $single);
     }
 
     public function result_array($data, $single = false)
     {
-		return $this->_result_fetch(SQLITE3_NUM, $data, $single);
+        return $this->_result_fetch(SQLITE3_NUM, $data, $single);
     }
 
     public function result_insert_id()

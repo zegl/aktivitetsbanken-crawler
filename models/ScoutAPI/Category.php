@@ -7,11 +7,11 @@ require_once 'Type.php';
 
 class Category extends Type
 {
-	public $unique = "name";
-	public $api_key = "categories";
+    public $unique = "name";
+    public $api_key = "categories";
 
-	public $keys = [
-		"name" => "default",
-		"group" => ""
-	];
+    public $keys = [
+        "name" => "default",
+        "group" => ""
+    ];
 }

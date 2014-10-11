@@ -7,11 +7,11 @@ require_once 'Type.php';
 
 class Reference extends Type
 {
-	public $unique = "uri";
-	public $api_key = "references";
+    public $unique = "uri";
+    public $api_key = "references";
 
-	public $keys = [
-		"uri" => "",
-		"description" => ""
-	];
+    public $keys = [
+        "uri" => "",
+        "description" => ""
+    ];
 }

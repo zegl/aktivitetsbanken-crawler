@@ -93,6 +93,7 @@ class SQL
         }
 
         $res = $this->result_array($res, true);
+
         return $res[0];
     }
 
@@ -224,7 +225,7 @@ class SQL
         }
 
         // MySQL
-        if(isset($this->_connection()->errno) && $this->_connection()->errno) {
+        if (isset($this->_connection()->errno) && $this->_connection()->errno) {
             $err = $this->_connection()->error;
         }
 
