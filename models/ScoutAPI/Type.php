@@ -30,7 +30,7 @@ class Type extends ScoutAPI
 
         // Set defaults
         foreach ($this->keys as $key => $default) {
-            if (!isset($array[$key])) {
+            if (!isset($array[$key]) && $default !== false) {
                 $array[$key] = $default;
             }
         }
@@ -76,6 +76,7 @@ class Type extends ScoutAPI
         $id = $this->exists($array[$this->unique]);
 
         if ($id === false) {
+            var_dump("does not exist");
             return false;
         }
 
@@ -85,6 +86,7 @@ class Type extends ScoutAPI
             return (int) $id;
         }
 
+        var_dump($code, $res);
         return false;
     }
 

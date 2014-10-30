@@ -95,6 +95,19 @@ class Activity extends Common
         }
 
         $json = $data;
+
+        /*$json['participants_1'] = $json['participants_min'];
+        $json['participants_2'] = $json['participants_max'];
+        $json['age_1'] = $json['age_min'];
+        $json['age_2'] = $json['age_max'];
+
+        unset($json['participants_min']);
+        unset($json['participants_max']);
+        unset($json['age_min']);
+        unset($json['age_max']);*/
+
+        unset($json['crawled_at']);
+
         $json['descr_introduction'] = $this->premable;
         $json['name'] = $this->name;
 
@@ -116,7 +129,7 @@ class Activity extends Common
             if ($scout_category_id) {
                 $json['categories'][] = $scout_category_id;
             } else {
-                var_dump($category);
+                $json['categories'][] = $scout_category->save($category);
             }
         }
 

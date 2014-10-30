@@ -7,6 +7,9 @@ class ScoutAPI
 	public $url = "http://devscout.mikaelsvensson.info:10081/api/v1/";
 	public static $token = "f0f1518890";
 
+	//public $url = "http://altaret.gustav.tv:3000/api/v1/";
+	//public static $token = "dbf815c37b";
+
 	public function api($method, $url, $data = null, $allow_cache = true)
 	{
 		$http = new \HTTP();
@@ -42,6 +45,10 @@ class ScoutAPI
 		if ($http->get_response_code() === 401) {
 			$this->register();
 			$this->api($method, $url, $data, $allow_cache);
+		}
+
+		if ($json === false) {
+			$json = $http->get();
 		}
 
 		return [$http->get_response_code(), $json];
