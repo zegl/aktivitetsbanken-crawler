@@ -498,10 +498,6 @@ class Activity extends Common
         if (isset($ext[$mime])) {
             $res['uri'] = 'attachments/' . md5($url) . '.' . $ext[$mime];
             file_put_contents($res['uri'], $data);
-        } else {
-
-            // Unrecognized files
-            // var_dump($mime, $url);
         }
 
         unlink($file);
@@ -523,6 +519,10 @@ class Activity extends Common
 
             if (strpos($vv, 'http') !== 0) {
                 $vv = 'http://www.scouterna.se/' . ltrim($vv, '/');
+            }
+
+            if (strlen($vv) > 250) {
+                continue;
             }
 
             $att = $this->attachment($vv);

@@ -15,6 +15,9 @@ class Type extends ScoutAPI
     // Api key, eg. "categories"
     public $api_key;
 
+    // HTTP Query parameters
+    public $api_parameters = "";
+
     public function save($array)
     {
         if (!isset($array[$this->unique])) {
@@ -56,7 +59,7 @@ class Type extends ScoutAPI
             return false;
         }
 
-        list($code, $res) = $this->api("GET", $this->api_key, null, false);
+        list($code, $res) = $this->api("GET", $this->api_key . "?" . $this->api_parameters, null, false);
 
         self::$all[$class] = [];
 

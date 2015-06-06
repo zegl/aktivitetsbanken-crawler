@@ -4,11 +4,22 @@ namespace ScoutAPI;
 
 class ScoutAPI
 {
-	public $url = "http://devscout.mikaelsvensson.info:10081/api/v1/";
-	public static $token = "f0f1518890";
+	public $url = "http://aktivitetsbanken.devscout.se/api/v1/";
+	public static $token = false;
 
-	//public $url = "http://altaret.gustav.tv:3000/api/v1/";
-	//public static $token = "dbf815c37b";
+	private function get_api_token()
+	{
+		if (self::$token) {
+			return self::$token;
+		}
+
+		$dotenv = new \Dotenv\Dotenv(__DIR__ . "/../../");
+		$dotenv->load();
+
+		self::$token = getenv('API_TOKEN');
+
+		return self::$token;
+	}
 
 	public function api($method, $url, $data = null, $allow_cache = true)
 	{
@@ -23,14 +34,10 @@ class ScoutAPI
 			$http->data($data, "application/json");
 		}
 
-		if ($method === "PUT") {
-			$http->method($method);
-		}
+		$http->method($method);
 
 		// Authenticate
-		if (self::$token) {
-			$http->header('Authorization', 'Token token="' . self::$token . '"');
-		}
+		$http->header('Authorization', 'Token token="' . $this->get_api_token() . '"');
 
 		$http->run();
 
@@ -43,8 +50,8 @@ class ScoutAPI
 
 		// Authentication has probably failed, register and try again
 		if ($http->get_response_code() === 401) {
-			$this->register();
-			$this->api($method, $url, $data, $allow_cache);
+			var_dump("Got 401");
+			var_dump($method, $url, $data, $allow_cache);
 		}
 
 		if ($json === false) {
@@ -52,20 +59,5 @@ class ScoutAPI
 		}
 
 		return [$http->get_response_code(), $json];
-	}
-
-	private function register()
-	{
-		list($code, $response) = $this->api('POST', 'users', [
-			"email" => "crawler@gustav.tv",
-			"display_name" => "Crawler"
-		]);
-
-		if (!isset($response['api_key'])) {
-			var_dump($response);
-			die('Could not register account');
-		}
-
-		self::$token = $response['api_key'];
 	}
 }

@@ -9,6 +9,7 @@ class Activity extends Type
 {
     public $unique = "name";
     public $api_key = "activities";
+    public $api_parameters = "time_1=0&time_2=0";
 
     public $keys = [
         "name" => "default",
