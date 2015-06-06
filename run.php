@@ -3,6 +3,8 @@
 error_reporting(E_ALL);
 ini_set('Display_errors', 'On');
 
+require 'vendor/autoload.php';
+
 require_once 'models/HTTP.php';
 require_once 'models/DB.php';
 require_once 'models/Common.php';
@@ -12,7 +14,7 @@ require_once 'models/Activity.php';
 $db = new DB();
 
 // Step 1 - Find all activities
-/*$http = new HTTP();
+$http = new HTTP();
 $html = $http->url("http://www.scouterna.se/aktiviteter-och-lager/aktivitetsbanken/alla-aktiviteter/")->run()->get();
 
 $matches = null;
@@ -30,15 +32,15 @@ foreach ($matches[0] as $k => $v) {
     }
 
     $act->save();
-}*/
+}
 
 // Step 3 - Find all categories
-//$tags = new Tags();
-//$tags->tags();
+$tags = new Tags();
+$tags->tags();
 
 // Step 4 - Finalize and save to ScoutAPI
-$activities = $db->rows("SELECT handle FROM activities WHERE id = 71");
 $activities = $db->rows("SELECT handle FROM activities");
+//$activities = $db->rows("SELECT handle FROM activities Where handle = '%s'", 'olika-aventyrsteman-for-hajken');
 
 foreach ($activities as $k => $activity) {
     echo ($k+1) . "/" . count($activities) . " = " . $activity['handle'] . "\n";
